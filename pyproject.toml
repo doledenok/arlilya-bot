@@ -1,0 +1,28 @@
+[project]
+name = "arlilya-bot"
+version = "1.0"
+readme = "docs/source/index.rst"
+requires-python = ">=3.10"
+authors = [
+ {name = "Doledenok Maxim"},
+ {name = "Nikorov Kirill"}
+]
+
+keywords = ["Telegram", "Bot", "project", "weather"]
+classifiers = [
+      "Development Status :: 5 - Production/Stable",
+      "Framework :: python-telegram-bot",
+      "Programming Language :: Python :: 3",
+      "Operating System :: OS Independent",
+]
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = "requirements.txt" }
+
+[project.urls]
+repository = "https://github.com/Sidl419/weather-bot"
+
+[build-system]
+requires = ["Sphinx", "setuptools", "build", "doit", "pydocstyle"]
+build-backend = "setuptools.build_meta"
