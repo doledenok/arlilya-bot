@@ -2,7 +2,6 @@
 
 import sys
 import os
-import random
 
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, constants
 from telegram.ext import CommandHandler, ContextTypes, CallbackQueryHandler, MessageHandler, filters
@@ -10,7 +9,7 @@ from telegram.ext import CommandHandler, ContextTypes, CallbackQueryHandler, Mes
 from start import start
 from exam import Exam, ExamStatus
 import exam_statistics
-import messages
+
 
 EXAMS_DATABASE_PATH = os.path.join(os.environ.get("TELEGRAM_ARLILYA_BOT_DATA", os.getcwd()), "exams_db.csv")
 STATISTICS_DATABASE_PATH = os.path.join(os.environ.get("TELEGRAM_ARLILYA_BOT_DATA", os.getcwd()), "exams_stats_db.csv")
@@ -37,7 +36,7 @@ async def admin_main(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if query.data == "admin_start":
         await context.bot.send_message(
-            chat_id=update.effective_chat.id, text="Итак, ваш сценарий - администратор экзамена"
+            chat_id=update.effective_chat.id, text="Итак, ваш сценарий — администратор экзамена"
         )
     else:
         await query.answer(f"Как вы это сделали? Бот сломан. Запрос {query.data} как callback выбора сценария")
@@ -59,8 +58,8 @@ async def admin_create_exam(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["exam"] = exam
 
     # TODO: убрать
-    context.bot_data["exams"][exam.id].add_speaker("Максим Доледенок")
-    context.bot_data["exams"][exam.id].add_speaker("Кто-то Кто-тович")
+    #context.bot_data["exams"][exam.id].add_speaker("Максим Доледенок")
+    #context.bot_data["exams"][exam.id].add_speaker("Кто-то Кто-тович")
     #################
 
     return await admin_print_exam_registration_finish(update, context)
@@ -110,6 +109,7 @@ async def admin_exam_registration_finish(update: Update, context: ContextTypes.D
 
 async def admin_finish_exam_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Save exam data and invite admin to look at them."""
+    print("SDLKJFLKDSKJFKSDLKFJLSDKJFD\n\n\n\n")
     context.user_data["exam"].exam_status = ExamStatus.PresentationsFinished
     await context.bot.send_message(
         chat_id=update.effective_chat.id, text="Ваш экзамен завершен. Теперь мы начинаем агрегировать результаты"

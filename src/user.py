@@ -1,5 +1,7 @@
 """User role realization."""
 
+import sys
+
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import (
     ContextTypes,
@@ -31,7 +33,7 @@ USER_STATES_BASE = 100
     USER_CHOOSE_EXAM,
     USER_NAME,
     USER_SHOW_LIST_OF_SPEAKERS,
-    USER_STORE_SPEAKER_ID,
+    USER_CHOOSE_SPEAKER,
     USER_SHOW_CRITERIA,
     USER_CHOOSE_RATE,
     USER_RATE_STUTTER_COUNT_STORE,
@@ -117,7 +119,7 @@ async def user_choose_exam(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return USER_CHOOSE_EXAM
     context.user_data["exam_id"] = exam_id
     context.user_data["exam"] = context.bot_data["exams"][exam_id]
-    await context.bot.send_message(update.effective_chat.id, "Успешно! Вы подключены к экзамену")
+    await context.bot.send_message(update.effective_chat.id, "Успешно! Вы подключены к экзамену.")
     await context.bot.send_message(update.effective_chat.id, "Пожалуйста, введите ваши имя и фамилию:")
     return USER_NAME
 
@@ -160,14 +162,29 @@ async def user_show_list_of_speakers(update: Update, context: ContextTypes.DEFAU
         [
             InlineKeyboardButton(f"{speakers[j]}", callback_data=f"user_speaker{j}")
             for j in range(i, min(len(speakers), i + 2))
-        ]
+        ]   
         for i in range(0, len(speakers), 2)
     ]
+    keyboard.append([
+            InlineKeyboardButton(f"↻ Обновить список выступающих", callback_data="user_speaker_start_listening")
+        ])
     reply_markup = InlineKeyboardMarkup(keyboard)
     await context.bot.send_message(
-        update.effective_chat.id, "Вот список выступающих. Выберите, кого вы хотите оценить:", reply_markup=reply_markup
+        update.effective_chat.id, "Вот список тех, кого вы можете оценить:", reply_markup=reply_markup
     )
-    return USER_STORE_SPEAKER_ID
+    return USER_CHOOSE_SPEAKER
+
+
+async def user_choose_speaker(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Check if user chose some speaker or asked for updating list of speakers."""
+    query = update.callback_query
+    if query.data == "user_speaker_start_listening":
+        return await user_show_list_of_speakers(update, context)
+    elif query.data.startswith("user_speaker"):
+        return await user_store_speaker_id(update, context)
+    else:
+        await query.answer(f"Как вы это сделали? Бот сломан. Запрос {query.data} как callback для выбора выступающего.")
+        return USER_SHOW_LIST_OF_SPEAKERS
 
 
 async def user_store_speaker_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -197,12 +214,12 @@ async def user_show_criteria(update: Update, context: ContextTypes.DEFAULT_TYPE)
     """Show the criteria of rating."""
     keyboard = [
         [InlineKeyboardButton(f"{form_rate_presence(context, 'stutter_count')}Количество спазматических задержек", callback_data="user_rate_stutter_count")],
-        [InlineKeyboardButton(f"{form_rate_presence(context, 'calmness_story')}Внутреннее спокойствие на подготовленной речи", callback_data="user_rate_calmness_story")],
-        [InlineKeyboardButton(f"{form_rate_presence(context, 'calmness_questions')}Внутреннее спокойствие на спонтанной речи", callback_data="user_rate_calmness_questions")],
+        [InlineKeyboardButton(f"{form_rate_presence(context, 'calmness_story')}Спокойствие на подготовленной речи", callback_data="user_rate_calmness_story")],
+        [InlineKeyboardButton(f"{form_rate_presence(context, 'calmness_questions')}Спокойствие на спонтанной речи", callback_data="user_rate_calmness_questions")],
         [InlineKeyboardButton(f"{form_rate_presence(context, 'eye_contact_story')}Зрительный контакт на подготовленной речи", callback_data="user_rate_eye_contact_story")],
         [InlineKeyboardButton(f"{form_rate_presence(context, 'eye_contact_quesitons')}Зрительный контакт на спонтанной речи", callback_data="user_rate_eye_contact_questions")],
         [InlineKeyboardButton(f"{form_rate_presence(context, 'answer_skill')}Умение отвечать на вопросы", callback_data="user_rate_answers_skill")],
-        [InlineKeyboardButton(f"{form_rate_presence(context, 'notes')}Замечания и впечатления про экзамен", callback_data="user_rate_notes")],
+        [InlineKeyboardButton(f"{form_rate_presence(context, 'notes')}Замечания и впечатления об экзамене", callback_data="user_rate_notes")],
         [InlineKeyboardButton(f"<< Выбрать другого выступающего", callback_data="user_speakers")],
         [InlineKeyboardButton(f"❌ Завершить участие в экзамене", callback_data="user_finish_exam")],
     ]
@@ -351,7 +368,7 @@ async def user_rate_notes_store(update: Update, context: ContextTypes.DEFAULT_TY
 
 async def user_finish_exam(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Finish exam and print the start menu."""
-    await context.bot.send_message(update.effective_chat.id, "Спасибо за участие в экзамене!\nТеперь вы можете дождаться окончания экзамена, чтобы увидеть "
+    await context.bot.send_message(update.effective_chat.id, "Спасибо за участие!\nТеперь вы можете дождаться окончания экзамена, чтобы увидеть "
           "общие и индивидуальные результаты.\nУдачи!")
     return await start(update, context)
 
@@ -362,7 +379,7 @@ user_states = {
     USER_WAIT_CREATING_EXAM: [CallbackQueryHandler(user_wait_creating_exams, pattern="^user_no_exams")],
     USER_NAME: [MessageHandler(filters.ALL, user_name)],
     USER_SHOW_LIST_OF_SPEAKERS: [CallbackQueryHandler(user_show_list_of_speakers, pattern="^user_start_listening$")],
-    USER_STORE_SPEAKER_ID: [CallbackQueryHandler(user_store_speaker_id, pattern="^user_speaker*")],
+    USER_CHOOSE_SPEAKER: [CallbackQueryHandler(user_choose_speaker, pattern="^user_speaker*")],
     USER_SHOW_CRITERIA: [MessageHandler(filters.ALL, user_show_criteria)],
     USER_CHOOSE_RATE: [
         CallbackQueryHandler(user_rate_stutter_count, pattern="^user_rate_stutter_count$"),

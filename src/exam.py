@@ -4,6 +4,7 @@ import os
 import enum
 import csv
 import random
+import yaml
 from typing import List, Dict
 
 
@@ -26,6 +27,7 @@ class Exam:
         self.speaker_names: List[str] = []
         self.speaker_answers: List[Dict[int, dict]] = []
         self.exam_status: ExamStatus = ExamStatus.Created
+        self.backup_file = open(os.path.join(os.environ.get("TELEGRAM_ARLILYA_BOT_DATA", os.getcwd()), "exam_backup.yaml"), "a")
 
     def add_speaker(self, name: str) -> int | None:
         """Return participant id or None if name is not unique."""
@@ -72,6 +74,11 @@ class Exam:
         if speaker_id not in self.speaker_answers[listener_id]:
             self.speaker_answers[listener_id][speaker_id] = {}
         self.speaker_answers[listener_id][speaker_id][field] = value
+        self.make_backup()
+
+    def make_backup(self):
+        #yaml.dump(self.backup_file)
+        pass
 
     def save_results(self, exams_csv_db: str) -> None:
         """Save all result of exam in csv file."""

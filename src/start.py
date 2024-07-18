@@ -22,10 +22,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     keyboard = [
         [
-            InlineKeyboardButton("Создать экзамен", callback_data="admin_start"),
+            InlineKeyboardButton("✅ Присоединиться к экзамену", callback_data="user_start"),
         ],
         [
-            InlineKeyboardButton("Присоединиться к экзамену", callback_data="user_start"),
+            InlineKeyboardButton("❌ Создать экзамен (для администратора)", callback_data="admin_start"),
         ],
     ]
 

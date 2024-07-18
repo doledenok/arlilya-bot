@@ -6,7 +6,7 @@ import sys
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ConversationHandler
 
 from start import start, CHOOSING_ROLE
-from admin import admin_main, admin_states
+from admin import admin_main, admin_states, admin_finish_exam_command
 from user import user_main, user_states
 
 
@@ -34,7 +34,7 @@ def main():
     states |= admin_states | user_states
 
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler("start", start)],
+        entry_points=[CommandHandler("start", start), CommandHandler("finish_exam", admin_finish_exam_command)],
         states=states,
         fallbacks=[CommandHandler("start", start)],
         # per_message=True,  # не очень ясно, что оно делает
