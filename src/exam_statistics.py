@@ -14,7 +14,7 @@ def plot_student_results(student_name: str, questions: List[str], scores: List[f
     fig.canvas.manager.set_window_title('Eldorado K-8 Fitness Chart')
 
     ax1.set_title(student_name)
-    ax1.set_xlabel('Per-question student result from 0 to 10', fontsize=18)
+    ax1.set_xlabel('Средние баллы за выступление', fontsize=18)
 
     rects = ax1.barh(questions, scores, align='center', height=0.5)
 
@@ -23,8 +23,8 @@ def plot_student_results(student_name: str, questions: List[str], scores: List[f
     ax1.bar_label(rects, small_scores, padding=5, color='black', fontweight='bold')
     ax1.bar_label(rects, large_scores, padding=-32, color='white', fontweight='bold')
 
-    ax1.set_xlim([0, 10])
-    ax1.set_xticks([i for i in range(10)])
+    ax1.set_xlim([0, 11])
+    ax1.set_xticks([i for i in range(11)])
     ax1.xaxis.grid(True, linestyle='--', which='major', color='grey', alpha=0.25)
     ax1.axvline(50, color='grey', alpha=0.25)
 
@@ -65,8 +65,8 @@ def calculate_exam_stats(exam_id: int, exam_marks_csv: str, stats_global_csv_db:
     exam_user_marks_groups = relevant_exam_df.groupby(by='answering_student_id')
     for user_id in examinee_users:
         exam_user_marks = exam_user_marks_groups.get_group(user_id)
-        exam_user_numeric_questions = exam_user_marks.loc[exam_user_marks.question_id != 'notes']
-        exam_user_notes_question = exam_user_marks.loc[exam_user_marks.question_id == 'notes']
+        exam_user_numeric_questions = exam_user_marks.loc[exam_user_marks.question_id != 'Замечания']
+        exam_user_notes_question = exam_user_marks.loc[exam_user_marks.question_id == 'Замечания']
         user_per_question_exam_stats = calculate_individual_stats(exam_user_numeric_questions)
         if len(exam_user_notes_question) > 0:
             joint_notes = '\n'.join(exam_user_notes_question.student_mark.values)

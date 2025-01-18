@@ -19,10 +19,19 @@ class ExamStatus(enum.Enum):
 
 class Exam:
     """Info about current exam."""
+    translater = {
+            "stutter_count": "Количество запинок",
+            "calmness_story": "Спокойствие на рассказе",
+            "calmness_questions": "Спокойствие на вопросах",
+            "eye_contact_story": "Зрительный контакт на рассказе",
+            "eye_contact_quesitons": "Зрительный контакт на вопросах",
+            "answer_skill": "Умение отвечать на вопросы",
+            "notes": "Замечания",
+        }
     # TODO: Сделать критерии отдельным классом, и обращаться к id критерия, а не к текстовому представлению.
     def __init__(self, name: str):
         """Create exam with id."""
-        self.id = random.randrange(100, 1000)
+        self.id = 711 #random.randrange(100, 1000)
         self.name = name
         self.speaker_names: List[str] = []
         self.speaker_answers: List[Dict[int, dict]] = []
@@ -54,7 +63,7 @@ class Exam:
         # TODO: переделать критерии в отдельный класс, и обращаться по индексу.
         if speaker_id not in self.speaker_answers[listener_id]:
             return False
-        if criteria not in self.speaker_answers[listener_id][speaker_id]:
+        if self.translater[criteria] not in self.speaker_answers[listener_id][speaker_id]:
             return False
         return True
 
@@ -73,7 +82,7 @@ class Exam:
         """
         if speaker_id not in self.speaker_answers[listener_id]:
             self.speaker_answers[listener_id][speaker_id] = {}
-        self.speaker_answers[listener_id][speaker_id][field] = value
+        self.speaker_answers[listener_id][speaker_id][self.translater[field]] = value
         self.make_backup()
 
     def make_backup(self):

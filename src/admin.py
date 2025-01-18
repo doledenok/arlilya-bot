@@ -109,7 +109,6 @@ async def admin_exam_registration_finish(update: Update, context: ContextTypes.D
 
 async def admin_finish_exam_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Save exam data and invite admin to look at them."""
-    print("SDLKJFLKDSKJFKSDLKFJLSDKJFD\n\n\n\n")
     context.user_data["exam"].exam_status = ExamStatus.PresentationsFinished
     await context.bot.send_message(
         chat_id=update.effective_chat.id, text="Ваш экзамен завершен. Теперь мы начинаем агрегировать результаты"

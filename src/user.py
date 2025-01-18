@@ -2,7 +2,7 @@
 
 import sys
 
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, constants
 from telegram.ext import (
     ContextTypes,
     CallbackQueryHandler,
@@ -12,6 +12,8 @@ from telegram.ext import (
 
 from exam import Exam, ExamStatus
 from start import start
+from admin import STATISTICS_DATABASE_PATH
+import exam_statistics
 
 
 """
@@ -43,7 +45,8 @@ USER_STATES_BASE = 100
     USER_RATE_EYE_CONTACT_QUESTIONS_STORE,
     USER_RATE_ANSWERS_SKILL_STORE,
     USER_RATE_NOTES_STORE,
-) = range(USER_STATES_BASE, USER_STATES_BASE + 15)
+    USER_WAIT_RESULTS,
+) = range(USER_STATES_BASE, USER_STATES_BASE + 16)
 
 
 async def user_main(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -61,10 +64,19 @@ async def user_main(update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
         if "exams" not in context.bot_data:
             context.bot_data["exams"] = {}
-        exam = Exam("Тестовый экзамен")
-        context.bot_data["exams"][exam.id] = exam
-        context.bot_data["exams"][exam.id].add_speaker("Максим Доледенок")
-        context.bot_data["exams"][exam.id].add_speaker("Кто-то Кто-тович")
+        #exam = Exam("Тестовый экзамен")
+        exam_id = list(context.bot_data["exams"].keys())[0]
+        #context.bot_data["exams"][exam.id] = exam
+        context.bot_data["exams"][exam_id].add_speaker("Максим Доледенок")
+        context.bot_data["exams"][exam_id].add_speaker("Ктото Ктотович")
+        context.bot_data["exams"][exam_id].add_speaker("Максим Долденок")
+        context.bot_data["exams"][exam_id].add_speaker("Максим Деденок")
+        context.bot_data["exams"][exam_id].add_speaker("Максим Денок")
+        context.bot_data["exams"][exam_id].add_speaker("МаксимДоледенок")
+        context.bot_data["exams"][exam_id].add_speaker("Максим Дыоледенок")
+        context.bot_data["exams"][exam_id].add_speaker("Максиледенок")
+        context.bot_data["exams"][exam_id].add_speaker("Мам Доледенок")
+        context.bot_data["exams"][exam_id].add_speaker("Максим денок")
         """
         #################
 
@@ -91,7 +103,6 @@ async def user_wait_creating_exams(update: Update, context: ContextTypes.DEFAULT
 
 
 async def user_show_list_of_exams(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    #await context.bot.send_message(update.effective_chat.id, "Пожалуйста, выберите экзамен, к которому вы хотите присоединиться:")
     keyboard = []
     for exam in context.bot_data["exams"].values():
         keyboard.append([InlineKeyboardButton(exam.name, callback_data=f"user_exam{exam.id}")])
@@ -157,10 +168,11 @@ async def user_show_list_of_speakers(update: Update, context: ContextTypes.DEFAU
         )
         return USER_SHOW_LIST_OF_SPEAKERS
 
-    speakers = context.user_data["exam"].get_speaker_names(context.user_data["user_id"])
+    self_speaker_id = context.user_data["user_id"]
+    speakers = context.user_data["exam"].get_speaker_names(self_speaker_id)
     keyboard = [
         [
-            InlineKeyboardButton(f"{speakers[j]}", callback_data=f"user_speaker{j}")
+            InlineKeyboardButton(f"{speakers[j]}", callback_data=f"user_speaker{j if self_speaker_id > j else j + 1}")
             for j in range(i, min(len(speakers), i + 2))
         ]   
         for i in range(0, len(speakers), 2)
@@ -368,9 +380,56 @@ async def user_rate_notes_store(update: Update, context: ContextTypes.DEFAULT_TY
 
 async def user_finish_exam(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Finish exam and print the start menu."""
-    await context.bot.send_message(update.effective_chat.id, "Спасибо за участие!\nТеперь вы можете дождаться окончания экзамена, чтобы увидеть "
-          "общие и индивидуальные результаты.\nУдачи!")
-    return await start(update, context)
+    await context.bot.send_message(update.effective_chat.id, "Спасибо за участие!\nТеперь вы можете дождаться обработки результатов администратором экзамена "
+          "или принять участие в новом экзамене.\nУдачи!")
+
+    keyboard = [
+        [
+            InlineKeyboardButton("Посмотреть свои результаты", callback_data="user_show_results"),
+        ],
+        [
+            InlineKeyboardButton("Принять участие в новом экзамене", callback_data="user_show_results_start_new"),
+        ],
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await context.bot.send_message(
+        update.effective_chat.id, "Пожалуйста, выберите сценарий:", reply_markup=reply_markup
+    )
+    return USER_WAIT_RESULTS
+
+
+async def user_wait_results(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    if query.data == "user_show_results_start_new":
+        return await start(update, context)
+    elif query.data.startswith("user_show_result"):
+        print("user_show_results\n")
+        if context.user_data["exam"].exam_status != ExamStatus.PresentationsFinished:
+            await context.bot.send_message(
+                update.effective_chat.id, "Администратор ещё не завершил экзамен, попробуйте немного позже."
+            )
+            return await user_finish_exam(update, context)
+
+        student_id = context.user_data["user_id"]
+        students_names = context.user_data["exam"].get_speaker_names()
+        student_name = students_names[student_id]
+        student_result = exam_statistics.get_student_results(
+            context.user_data["exam_id"], student_id, students_names, STATISTICS_DATABASE_PATH
+        )
+
+        await context.bot.send_photo(
+            chat_id=update.effective_chat.id,
+            photo=f'{STATISTICS_DATABASE_PATH}_{context.user_data["exam_id"]}_{student_id}_results.png',
+            caption=f"*{student_name}*\. Результаты\.\nЗамечания слушателей:\n```Замечания\n{student_result}\n```",
+            parse_mode=constants.ParseMode.MARKDOWN_V2,
+        )
+        return await start(update, context)
+    else:
+        await query.answer(f"Как вы это сделали? Бот сломан. Запрос {query.data} как callback для выбора выступающего.")
+        return await user_finish_exam
 
 
 user_states = {
@@ -399,4 +458,5 @@ user_states = {
     USER_RATE_EYE_CONTACT_QUESTIONS_STORE: [MessageHandler(filters.ALL, user_rate_eye_contact_questions_store)],
     USER_RATE_ANSWERS_SKILL_STORE: [MessageHandler(filters.ALL, user_rate_answers_skill_store)],
     USER_RATE_NOTES_STORE: [MessageHandler(filters.ALL, user_rate_notes_store)],
+    USER_WAIT_RESULTS: [CallbackQueryHandler(user_wait_results, pattern="^user_show_result*")],
 }

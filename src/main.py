@@ -36,7 +36,7 @@ def main():
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start), CommandHandler("finish_exam", admin_finish_exam_command)],
         states=states,
-        fallbacks=[CommandHandler("start", start)],
+        fallbacks=[CommandHandler("start", start), CommandHandler("finish_exam", admin_finish_exam_command)],
         # per_message=True,  # не очень ясно, что оно делает
     )
 
